@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+.zed/
+cmake-build-*/
+build/
+out/
