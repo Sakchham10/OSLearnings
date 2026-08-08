@@ -2,7 +2,7 @@
 #define BASICS_THREADMANAGER_HPP
 #include "queue.hpp"
 #include <condition_variable>
-#include <functional>
+#include <cstddef>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -14,12 +14,13 @@ template <typename T> class threadManager {
   bool shuttingDown;
   std::vector<std::thread> threads;
   int threadCount;
-  queue<std::function<T>> workQueue;
+  queue<T> workQueue;
   std::mutex lock;
   std::condition_variable cv;
+  std::size_t maxSize;
   void threadTask() {
     while (true) {
-      std::function<T> task;
+      T task;
       {
         std::unique_lock<std::mutex> queueAccessLock(lock);
         cv.wait(queueAccessLock,
@@ -29,6 +30,7 @@ template <typename T> class threadManager {
         }
         task = workQueue.popLeft();
       }
+      cv.notify_all();
       try {
         task();
       } catch (...) {
@@ -55,6 +57,17 @@ public:
     for (auto i = 0; i < threadCount; i++) {
       threads.emplace_back(&threadManager::threadTask, this);
     }
+  }
+  void submit(T task) {
+    std::unique_lock<std::mutex> queueAcessLock(lock);
+    cv.wait(queueAcessLock,
+            [this]() { return shuttingDown || workQueue.getSize() < maxSize; });
+    if (shuttingDown) {
+      std::cout << "Shut down has been requested, can't add more tasks\n";
+      return;
+    }
+    queueAcessLock.release();
+    cv.notify_one();
   }
 };
 
