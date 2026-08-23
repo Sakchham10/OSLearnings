@@ -19,8 +19,8 @@ template <typename T> struct node {
 } // namespace detail
 
 template <typename T> class linkedlist {
-  std::mutex lock;
-  std::binary_semaphore readerSem;
+  mutable std::mutex lock;
+  mutable std::binary_semaphore readerSem;
   int size;
   int readerCount;
   std::unique_ptr<detail::node<T>> head;
@@ -52,6 +52,39 @@ public:
   linkedlist()
       : size(0), readerSem(1), readerCount(0), head(nullptr), tail(nullptr) {}
   ~linkedlist() = default;
+  // copy constructor
+  linkedlist(const linkedlist &other)
+      : readerSem(1), readerCount(0), head(nullptr), tail(nullptr) {
+    other.readerSem.acquire();
+    if (this != &other) {
+      auto curr = other.head.get();
+      while (curr != nullptr) {
+        appendUnlocked(curr->value);
+        curr = curr->next.get();
+      }
+    };
+    other.readerSem.release();
+  };
+  // assignment operator
+  linkedlist &operator=(const linkedlist &other) {
+    if (this == &other) {
+      return;
+    }
+    linkedlist temp;
+    other.readerSem.acquire();
+    auto curr = other.head.get();
+    while (curr != nullptr) {
+      temp.appendUnlocked(curr->value);
+      curr = curr->next.get();
+    }
+    other.readerSem.release();
+    readerSem.acquire();
+    std::swap(head, temp.head);
+    std::swap(tail, temp.tail);
+    std::swap(size, temp.size);
+    readerSem.release();
+    return *this;
+  }
   void append(T value) {
     readerSem.acquire();
     appendUnlocked(std::move(value));
