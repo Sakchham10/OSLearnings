@@ -9,7 +9,9 @@ add_library(Basics STATIC library.cpp
         linkedlist.hpp
         queue.hpp
         threadManager.hpp
-        hashMap.hpp)
+        hashMap.hpp
+        runnable.hpp
+        workItem.hpp)
 target_include_directories(Basics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(LinkedListTests tests/linkedlist_tests.cpp

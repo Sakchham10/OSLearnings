@@ -56,15 +56,17 @@ public:
   linkedlist(const linkedlist &other)
       : readerSem(1), readerCount(0), head(nullptr), tail(nullptr) {
     other.readerSem.acquire();
-    if (this != &other) {
-      auto curr = other.head.get();
-      while (curr != nullptr) {
-        appendUnlocked(curr->value);
-        curr = curr->next.get();
-      }
-    };
+    if (this == &other) {
+      return;
+    }
+    auto curr = other.head.get();
+    while (curr != nullptr) {
+      appendUnlocked(curr->value);
+      curr = curr->next.get();
+    }
     other.readerSem.release();
   };
+
   // assignment operator
   linkedlist &operator=(const linkedlist &other) {
     if (this == &other) {

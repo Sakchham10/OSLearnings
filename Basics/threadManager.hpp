@@ -1,7 +1,7 @@
 #ifndef BASICS_THREADMANAGER_HPP
 #define BASICS_THREADMANAGER_HPP
 #include "queue.hpp"
-#include <algorithm>
+#include "workItem.hpp"
 #include <condition_variable>
 #include <cstddef>
 #include <iostream>
@@ -11,16 +11,16 @@
 
 namespace basics {
 
-template <typename T> class threadManager {
+class threadManager {
   bool shuttingDown;
   std::vector<std::thread> threads;
   int threadCount;
-  queue<T> workQueue;
+  queue<workItem> workQueue;
   std::mutex lock;
   std::condition_variable cv;
   std::size_t maxSize;
   void threadTask() {
-    T task;
+    std::optional<workItem> work;
     while (true) {
       {
         std::unique_lock<std::mutex> queueAccessLock(lock);
@@ -29,11 +29,11 @@ template <typename T> class threadManager {
         if (shuttingDown && workQueue.getSize() == 0) {
           return;
         }
-        task = workQueue.popLeft();
+        work.emplace(workQueue.popLeft());
       }
       cv.notify_all();
       try {
-        task.runTask();
+        work->task->runTask(work->quantum);
       } catch (...) {
         std::cout << "Could not perform an operation.\n";
       }
@@ -59,7 +59,7 @@ public:
       threads.emplace_back(&threadManager::threadTask, this);
     }
   }
-  void submit(T task) {
+  void submit(workItem task) {
     std::unique_lock<std::mutex> queueAcessLock(lock);
     cv.wait(queueAcessLock,
             [this]() { return shuttingDown || workQueue.getSize() < maxSize; });

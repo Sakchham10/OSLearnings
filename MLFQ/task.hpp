@@ -4,29 +4,21 @@
 
 #ifndef OSLEARNINGS_TASK_HPP
 #define OSLEARNINGS_TASK_HPP
+#include "runnable.hpp"
 #include <chrono>
 #include <cstddef>
-#include <functional>
 #include <iostream>
 #include <random>
 #include <ratio>
-enum class taskPriority {
-  First = 0,
-  Second = 1,
-  Third = 2,
-  Fourth = 3,
-  Fifth = 4,
-  Count = 5
-};
 
-class task {
+class task : public basics::runnable {
   int id;
   std::chrono::milliseconds cpuTime;
   std::chrono::milliseconds ioTime;
   std::chrono::milliseconds cpuTimeCompleted;
   std::chrono::milliseconds ioTimeCompleted;
   std::chrono::milliseconds nextIoDuration;
-  taskPriority priority;
+  basics::runnablePriority priority;
   int getWork() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -55,7 +47,8 @@ class task {
   }
 
 public:
-  bool runTask(std::chrono::milliseconds quanta) {
+  // TODO: make move constructor, see mlfq.hpp (std::move(task))
+  bool runTask(std::chrono::milliseconds quanta) override {
     auto start = std::chrono::high_resolution_clock::now();
     auto shouldRunIo = false;
     while (true && cpuTimeCompleted < cpuTime) {
@@ -86,21 +79,24 @@ public:
     }
     return false;
   }
-  taskPriority getPriority() { return priority; }
-  void changePriority(taskPriority newPriority) {
-    if (newPriority == taskPriority::Count) {
+  basics::runnablePriority getPriority() override { return priority; }
+  void changePriority(basics::runnablePriority newPriority) override {
+    if (newPriority == basics::runnablePriority::Count) {
       std::cout
           << "Priority of the task is wrong, moving to highest priority\n";
-      priority = taskPriority::First;
+      priority = basics::runnablePriority::First;
       return;
     }
     priority = newPriority;
   }
   std::chrono::milliseconds getNextIoDuration() { return nextIoDuration; }
-  task(std::function<void()> work, std::chrono::milliseconds cpu,
-       std::chrono::milliseconds io)
+  int getId() override { return id; }
+  ~task() = default;
+  task(task &&) = default;
+  task(std::chrono::milliseconds cpu = std::chrono::milliseconds(10),
+       std::chrono::milliseconds io = std::chrono::milliseconds(10))
       : cpuTime(cpu), ioTime(io), cpuTimeCompleted(0), ioTimeCompleted(0),
-        nextIoDuration(0), priority(taskPriority::First) {}
+        nextIoDuration(0), priority(basics::runnablePriority::First) {}
 };
 
 #endif // OSLEARNINGS_TASK_HPP
