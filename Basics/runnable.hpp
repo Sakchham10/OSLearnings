@@ -21,7 +21,8 @@ class runnable {
 public:
   virtual ~runnable() = default;
   virtual int getId() = 0;
-  virtual bool runTask(std::chrono::milliseconds quantum) = 0;
+  virtual std::chrono::milliseconds getIO() = 0;
+  virtual void runTask(std::chrono::milliseconds quantum) = 0;
   virtual runnablePriority getPriority() = 0;
   virtual void changePriority(runnablePriority priority) = 0;
 };

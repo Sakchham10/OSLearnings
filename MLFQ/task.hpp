@@ -45,17 +45,19 @@ class task : public basics::runnable {
         0, (ioTime - ioTimeCompleted).count());
     nextIoDuration = std::chrono::milliseconds(dist(gen));
   }
+  bool shouldRunIO;
 
 public:
   // TODO: make move constructor, see mlfq.hpp (std::move(task))
-  bool runTask(std::chrono::milliseconds quanta) override {
+  void runTask(std::chrono::milliseconds quanta) override {
+    shouldRunIO = false;
     auto start = std::chrono::high_resolution_clock::now();
-    auto shouldRunIo = false;
     while (true && cpuTimeCompleted < cpuTime) {
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double, std::milli> elapsed = end - start;
       if (elapsed >= quanta) {
-        return shouldRunIo;
+        shouldRunIO = true;
+        return;
       }
       auto work = getWork();
       if (work == 0) {
@@ -64,20 +66,20 @@ public:
                 std::chrono::high_resolution_clock::now() - end);
         cpuTimeCompleted += duration;
       } else {
-        shouldRunIo = true;
+        shouldRunIO = true;
         calculateNextIoDuration();
         std::chrono::milliseconds duration =
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::high_resolution_clock::now() - end);
         cpuTimeCompleted += duration;
-        return shouldRunIo;
+        return;
       }
     }
     if (ioTime > ioTimeCompleted) {
       calculateNextIoDuration();
-      return true;
+      return;
     }
-    return false;
+    return;
   }
   basics::runnablePriority getPriority() override { return priority; }
   void changePriority(basics::runnablePriority newPriority) override {
@@ -89,8 +91,8 @@ public:
     }
     priority = newPriority;
   }
-  std::chrono::milliseconds getNextIoDuration() { return nextIoDuration; }
   int getId() override { return id; }
+  std::chrono::milliseconds getIO() override { return nextIoDuration; }
   ~task() = default;
   task(task &&) = default;
   task(std::chrono::milliseconds cpu = std::chrono::milliseconds(10),
