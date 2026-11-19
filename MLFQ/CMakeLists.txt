@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(MLFQ main.cpp
         mlfq.hpp
-        task.hpp)
+        task.hpp
+        workItem.hpp)
 
 if(NOT TARGET Basics)
     add_subdirectory(../Basics Basics_build)

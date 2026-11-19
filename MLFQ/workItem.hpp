@@ -1,26 +1,28 @@
 #ifndef BASICS_WORKITEM_HPP
 #define BASICS_WORKITEM_HPP
 
-#include "runnable.hpp"
-#include <any>
+#include "task.hpp"
 #include <chrono>
-#include <future>
 #include <memory>
 
-namespace basics {
+enum class runnablePriority {
+  First = 0,
+  Second = 1,
+  Third = 2,
+  Fourth = 3,
+  Fifth = 4,
+  Count = 5
+};
 
 class workItem {
 public:
-  std::unique_ptr<runnable> task;
-  std::promise<std::any> result;
+  std::unique_ptr<task> runnable;
   std::chrono::milliseconds quantum;
   workItem(workItem &&) = default;
   workItem() = delete;
-  explicit workItem(std::unique_ptr<runnable> task,
+  explicit workItem(std::unique_ptr<task> task,
                     std::chrono::milliseconds quantum)
-      : task(std::move(task)), quantum(quantum) {};
+      : runnable(std::move(task)), quantum(quantum) {};
 };
-
-} // namespace basics
 
 #endif // BASICS_WORKITEM_HPP

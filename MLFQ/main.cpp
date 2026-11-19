@@ -1,6 +1,7 @@
 #include "linkedlist.hpp"
 #include "queue.hpp"
 #include "threadManager.hpp"
+#include "workItem.hpp"
 
 int main() {
   basics::queue<int> readyQueue;
@@ -9,7 +10,7 @@ int main() {
   basics::linkedlist<int> completedJobs;
   completedJobs.append(readyQueue.popLeft());
 
-  basics::threadManager threadManager(10);
+  basics::threadManager<basics::workItem> threadManager(10);
 
   return 0;
 }

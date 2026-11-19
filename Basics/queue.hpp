@@ -1,7 +1,6 @@
 #ifndef BASICS_QUEUE_HPP
 #define BASICS_QUEUE_HPP
 
-#include <iostream>
 
 #include "linkedlist.hpp"
 #include <optional>
